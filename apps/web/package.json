@@ -1,0 +1,20 @@
+{
+  "name": "@knowledge-studio/web",
+  "version": "0.5.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "@excalidraw/excalidraw": "^0.18.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "vite": "^7.2.6",
+    "typescript": "^5.9.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {}
+}

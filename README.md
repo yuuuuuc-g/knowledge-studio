@@ -44,7 +44,7 @@
 ```bash
 AI_API_KEY=你的 DeepSeek API Key
 AI_BASE_URL=https://api.deepseek.com
-AI_MODEL=deepseek-v4-flash
+AI_MODEL=deepseek-v4-pro
 ```
 
 如果需要更强推理能力，可以把 `AI_MODEL` 改成 `deepseek-v4-pro`。
@@ -63,10 +63,21 @@ Vercel 项目的 Root Directory 应保持为仓库根目录，不要选 `apps/ap
 ```bash
 AI_API_KEY=你的 DeepSeek API Key
 AI_BASE_URL=https://api.deepseek.com
-AI_MODEL=deepseek-v4-flash
+AI_MODEL=deepseek-v4-pro
+SUPABASE_URL=https://你的项目.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=你的 Supabase service_role key
+SUPABASE_RESOURCES_TABLE=knowledge_resources
+SUPABASE_STORAGE_BUCKET=knowledge-resource-files
 ```
 
-注意：Vercel Serverless 文件系统不是长期存储。生产环境如果要长期保存上传的电子书和解析结果，需要接入 Vercel Blob、数据库或对象存储。
+Supabase 初始化：
+
+1. 在 Supabase 项目的 SQL Editor 运行 `supabase/schema.sql`。
+2. 后端会把原始上传文件保存到 Supabase Storage bucket：`knowledge-resource-files`。
+3. 后端会把解析后的书籍 JSON 保存到 `public.knowledge_resources.resource`。
+4. `SUPABASE_SERVICE_ROLE_KEY` 只能放在 `apps/api/.env` 或 Vercel 后端环境变量里，不能放进前端。
+
+如果没有配置 Supabase 环境变量，本地开发会继续 fallback 到 `apps/api/data/`。
 
 ## GitNexus
 
@@ -79,4 +90,3 @@ gitnexus status
 
 ## Next Step
 
-下一步建议先做一个可运行原型：Reader 左右分栏、Canvas 结构图文件夹、Writing Studio 的主动出题体验。这个原型不必先接真实书库，先验证“读完以后能不能被引导写出来”。

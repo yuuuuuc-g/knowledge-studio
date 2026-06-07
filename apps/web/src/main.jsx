@@ -6,7 +6,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import "@excalidraw/excalidraw/index.css";
 import "./styles.css";
-import { deleteResource, getHealth, getResources, postJson, uploadResource } from "./api";
+import { deleteResource, getHealth, getResources, postJson, updateResource, uploadResource } from "./api";
 import { createDefaultMap, initialBooks } from "./sampleData";
 import { sceneToPlainNodes, structureToScene } from "./excalidrawScene";
 
@@ -30,7 +30,7 @@ const store = {
 
 function App() {
   const [view, setView] = useState("bookshelf");
-  const [books, setBooks] = useStoredState("ks-books", initialBooks);
+  const [books, setBooks] = useState(initialBooks);
   const [maps, setMaps] = useStoredState("ks-maps-v3", [createDefaultMap(initialBooks[0])]);
   const [selectedBookId, setSelectedBookId] = useState(initialBooks[0].id);
   const [selectedParagraph, setSelectedParagraph] = useState(0);
@@ -40,6 +40,7 @@ function App() {
     "<h2>稀缺资源如何分配</h2><p>我想讨论政治、经济、社会三种资源分配之间的关系。</p>"
   );
   const [questions, setQuestions] = useState([]);
+  const [questionLoading, setQuestionLoading] = useState(false);
   const [translation, setTranslation] = useState({ source: "", target: "English", output: "" });
   const [loading, setLoading] = useState("");
   const [health, setHealth] = useState({ ok: false, aiConfigured: false });
@@ -57,9 +58,9 @@ function App() {
       .then((resources) => {
         if (!resources.length) return;
         setBooks((current) => {
-          const existingIds = new Set(current.map((book) => book.id));
-          const incoming = resources.filter((book) => !existingIds.has(book.id));
-          return incoming.length ? [...incoming, ...current] : current;
+          const resourceIds = new Set(resources.map((book) => book.id));
+          const sampleBooks = current.filter((book) => !resourceIds.has(book.id) && initialBooks.some((sample) => sample.id === book.id));
+          return [...resources, ...sampleBooks];
         });
       })
       .catch(() => {});
@@ -91,7 +92,7 @@ function App() {
   }
 
   async function generateQuestions() {
-    setLoading("正在生成写作问题...");
+    setQuestionLoading(true);
     try {
       const result = await postJson("/api/questions", {
         mapTitle: selectedMap?.title,
@@ -100,7 +101,7 @@ function App() {
       });
       setQuestions(result.questions || []);
     } finally {
-      setLoading("");
+      setQuestionLoading(false);
     }
   }
 
@@ -168,8 +169,18 @@ function App() {
     }
   }
 
+  async function editResource(book, changes) {
+    setLoading("正在保存书籍信息...");
+    try {
+      const updated = book.storage ? await updateResource(book.id, changes) : { ...book, ...changes };
+      setBooks((current) => current.map((item) => (item.id === book.id ? updated : item)));
+    } finally {
+      setLoading("");
+    }
+  }
+
   return (
-    <div className="appShell">
+    <div className={`appShell view-${view}`}>
       <header className="topbar">
         <button className="brand" onClick={() => setView("bookshelf")}>
           <span className="mark">KS</span>
@@ -198,6 +209,7 @@ function App() {
           onRead={(book) => { setSelectedBookId(book.id); setView("reader"); }}
           onAdd={addResource}
           onDelete={removeResource}
+          onEdit={editResource}
         />
       ) : null}
 
@@ -217,7 +229,14 @@ function App() {
       ) : null}
 
       {view === "editor" ? (
-        <EditorPanel map={selectedMap} draft={draft} setDraft={setDraft} questions={questions} generateQuestions={generateQuestions} />
+        <EditorPanel
+          map={selectedMap}
+          draft={draft}
+          setDraft={setDraft}
+          questions={questions}
+          questionLoading={questionLoading}
+          generateQuestions={generateQuestions}
+        />
       ) : null}
 
       {view === "publish" ? (
@@ -227,8 +246,40 @@ function App() {
   );
 }
 
-function Bookshelf({ books, onRead, onAdd, onDelete }) {
+function Bookshelf({ books, onRead, onAdd, onDelete, onEdit }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const [editingBook, setEditingBook] = useState(null);
+
+  function getTitleSize(title) {
+    const weightedLength = Array.from(title || "").reduce((total, char) => {
+      if (/\s/.test(char)) return total + 0.25;
+      if (/[\u4e00-\u9fff]/.test(char)) return total + 1.15;
+      if (/[A-Z]/.test(char)) return total + 0.72;
+      if (/[.,:;_｜|/\\-]/.test(char)) return total + 0.32;
+      return total + 0.58;
+    }, 0);
+
+    const size = Math.max(13, Math.min(24, 30 - weightedLength * 0.4));
+    return `${size.toFixed(1)}px`;
+  }
+
+  async function handleAdd(event) {
+    await onAdd(event);
+    setFileName("");
+  }
+
+  async function handleEdit(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    await onEdit(editingBook, {
+      title: form.get("title"),
+      author: form.get("author"),
+      language: form.get("language"),
+      tags: String(form.get("tags") || "").split(/[,，]/)
+    });
+    setEditingBook(null);
+  }
 
   return (
     <main className={sidebarCollapsed ? "bookshelfLayout sidebarCollapsed" : "bookshelfLayout"}>
@@ -246,14 +297,20 @@ function Bookshelf({ books, onRead, onAdd, onDelete }) {
           </button>
         </div>
         {!sidebarCollapsed ? (
-          <form className="resourceForm" onSubmit={onAdd}>
+          <form className="resourceForm" onSubmit={handleAdd}>
             <p>上传阅读材料，解析后会进入右侧书架。</p>
             <label className="uploadBox">
               <span>上传文件</span>
+              <span className="filePicker">
+                <span className="fileButton">选择文件</span>
+                <span className="fileName">{fileName || "未选择任何文件"}</span>
+              </span>
               <input
                 name="resource"
+                className="fileInput"
                 type="file"
                 accept=".txt,.text,.md,.markdown,.html,.htm,.pdf,.epub,.mobi,.azw3,text/plain,text/markdown,text/html,application/pdf,application/epub+zip"
+                onChange={(event) => setFileName(event.target.files?.[0]?.name || "")}
               />
               <small>支持 TXT、Markdown、HTML、PDF、EPUB、MOBI、AZW3。TXT、Markdown、HTML、EPUB 会直接解析；PDF、MOBI、AZW3 可先补充正文。</small>
             </label>
@@ -274,21 +331,56 @@ function Bookshelf({ books, onRead, onAdd, onDelete }) {
         </div>
         <div className="bookGrid">
           {!books.length ? <p className="emptyState">还没有资源。先从左侧上传一本书或一份材料。</p> : null}
-          {books.map((book) => (
+          {books.slice(0, 4).map((book) => (
             <article className="bookCard" key={book.id}>
               <div className="meta">{book.language} / {book.type}</div>
-              <h2>{book.title}</h2>
+              <h2 style={{ "--title-size": getTitleSize(book.title) }} title={book.title}>{book.title}</h2>
               <p>{book.author}</p>
               {book.importNote ? <p className="importNote">{book.importNote}</p> : null}
               <div className="tags">{book.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
               <div className="bookActions">
                 <button onClick={() => onRead(book)}>开始阅读</button>
+                <button type="button" onClick={() => setEditingBook(book)}>编辑</button>
                 <button className="dangerButton" onClick={() => onDelete(book)}>删除</button>
               </div>
             </article>
           ))}
         </div>
       </section>
+      {editingBook ? (
+        <div className="editOverlay" role="dialog" aria-modal="true" aria-label="编辑书籍信息">
+          <form className="editPanel" onSubmit={handleEdit}>
+            <div className="editPanelHead">
+              <strong>编辑书籍信息</strong>
+              <button type="button" onClick={() => setEditingBook(null)} aria-label="关闭编辑">×</button>
+            </div>
+            <label>
+              <span>书名</span>
+              <input name="title" defaultValue={editingBook.title} required />
+            </label>
+            <label>
+              <span>作者或来源</span>
+              <input name="author" defaultValue={editingBook.author} />
+            </label>
+            <label>
+              <span>语言</span>
+              <select name="language" defaultValue={editingBook.language || "中文"}>
+                <option>中文</option>
+                <option>English</option>
+                <option>Espanol</option>
+              </select>
+            </label>
+            <label>
+              <span>标签</span>
+              <input name="tags" defaultValue={(editingBook.tags || []).join("，")} placeholder="用逗号分隔标签" />
+            </label>
+            <div className="editActions">
+              <button type="button" onClick={() => setEditingBook(null)}>取消</button>
+              <button type="submit">保存修改</button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -356,7 +448,7 @@ function MapLibrary({ maps, books, onOpen }) {
   );
 }
 
-function EditorPanel({ map, draft, setDraft, questions, generateQuestions }) {
+function EditorPanel({ map, draft, setDraft, questions, questionLoading, generateQuestions }) {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -398,14 +490,17 @@ function EditorPanel({ map, draft, setDraft, questions, generateQuestions }) {
       <section className="draftPane">
         <div className="sectionHead">
           <div>
-            <h1>编辑</h1>
+            <h1>写作</h1>
             <p>在这里把结构图发展成文章，AI 出题会从当前结构和草稿生成。</p>
           </div>
-          <button onClick={generateQuestions}>AI 出题</button>
+          <button onClick={generateQuestions} disabled={questionLoading}>
+            AI 出题
+          </button>
         </div>
         <div className="questionPanel">
           <div className="questionPanelTitle">题目</div>
           <div className="questionRow">
+            {questionLoading ? <div className="questionStatus">正在生成写作问题...</div> : null}
             {questions.map((question) => (
               <button key={question} onClick={() => appendQuestion(question)}>
                 {question}

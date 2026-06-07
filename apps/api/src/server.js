@@ -15,6 +15,11 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const dataDir = process.env.VERCEL ? path.join(os.tmpdir(), "knowledge-studio") : path.resolve(__dirname, "../data");
 const uploadsDir = path.join(dataDir, "uploads");
 const resourcesFile = path.join(dataDir, "resources.json");
+const supabaseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "") || "";
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || "";
+const supabaseResourcesTable = process.env.SUPABASE_RESOURCES_TABLE || "knowledge_resources";
+const supabaseStorageBucket = process.env.SUPABASE_STORAGE_BUCKET || "knowledge-resource-files";
+const supabaseEnabled = Boolean(supabaseUrl && supabaseServiceKey);
 
 const app = express();
 const port = Number(process.env.PORT || 8787);
@@ -31,12 +36,30 @@ app.use(cors({ origin: webOrigin }));
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, aiConfigured: Boolean(aiKey), model: aiModel });
+  res.json({
+    ok: true,
+    aiConfigured: Boolean(aiKey),
+    model: aiModel,
+    storage: supabaseEnabled ? "supabase" : "local"
+  });
 });
 
 app.get("/api/resources", async (_req, res, next) => {
   try {
     res.json({ resources: await readStoredResources() });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.patch("/api/resources/:id", async (req, res, next) => {
+  try {
+    const updated = await updateStoredResource(req.params.id, req.body || {});
+    if (!updated) {
+      res.status(404).json({ error: "没有找到这个资源。" });
+      return;
+    }
+    res.json(updated);
   } catch (error) {
     next(error);
   }
@@ -147,11 +170,11 @@ app.post("/api/questions", async (req, res, next) => {
         {
           role: "system",
           content:
-            "You are a question engine for university writing. Return strict JSON only: {\"questions\": string[]}. Ask active, sharp questions that force comparison, evidence, critique, transfer, and bilingual expression."
+            "你是大学写作问题引擎。必须只返回严格 JSON：{\"questions\": string[]}。所有问题必须使用简体中文，不要输出英文或双语题目。问题要主动、具体、有辨析度，推动学生进行比较、举证、批判和迁移。"
         },
         {
           role: "user",
-          content: `Map title: ${mapTitle}\nNodes: ${JSON.stringify(nodes).slice(0, 5000)}\nCurrent draft: ${String(draft).slice(0, 3000)}`
+          content: `结构图标题：${mapTitle}\n结构节点：${JSON.stringify(nodes).slice(0, 5000)}\n当前草稿：${String(draft).slice(0, 3000)}\n请生成 4 到 6 个简体中文写作问题。`
         }
       ],
       { json: true }
@@ -200,6 +223,11 @@ async function callOpenAiText(messages, options = {}) {
 }
 
 async function persistResource(book, file) {
+  if (supabaseEnabled) return persistResourceToSupabase(book, file);
+  return persistResourceToLocal(book, file);
+}
+
+async function persistResourceToLocal(book, file) {
   await fs.mkdir(uploadsDir, { recursive: true });
   let storedFile = null;
 
@@ -230,6 +258,16 @@ async function persistResource(book, file) {
 }
 
 async function deleteStoredResource(id) {
+  if (supabaseEnabled) return deleteStoredResourceFromSupabase(id);
+  return deleteStoredResourceFromLocal(id);
+}
+
+async function updateStoredResource(id, changes) {
+  if (supabaseEnabled) return updateStoredResourceInSupabase(id, changes);
+  return updateStoredResourceInLocal(id, changes);
+}
+
+async function deleteStoredResourceFromLocal(id) {
   const current = await readStoredResources();
   const target = current.find((resource) => resource.id === id);
   if (!target) return false;
@@ -246,7 +284,22 @@ async function deleteStoredResource(id) {
   return true;
 }
 
+async function updateStoredResourceInLocal(id, changes) {
+  const current = await readStoredResources();
+  const target = current.find((resource) => resource.id === id);
+  if (!target) return null;
+
+  const updated = applyResourceChanges(target, changes);
+  await writeStoredResources(current.map((resource) => (resource.id === id ? updated : resource)));
+  return updated;
+}
+
 async function readStoredResources() {
+  if (supabaseEnabled) return readStoredResourcesFromSupabase();
+  return readStoredResourcesFromLocal();
+}
+
+async function readStoredResourcesFromLocal() {
   try {
     const raw = await fs.readFile(resourcesFile, "utf8");
     const parsed = JSON.parse(raw);
@@ -260,6 +313,168 @@ async function readStoredResources() {
 async function writeStoredResources(resources) {
   await fs.mkdir(dataDir, { recursive: true });
   await fs.writeFile(resourcesFile, JSON.stringify(resources, null, 2));
+}
+
+async function persistResourceToSupabase(book, file) {
+  let storedFile = null;
+
+  if (file) {
+    const extension = getFileExtension(file.originalname);
+    const storedName = `${book.id}${extension ? `.${extension}` : ""}`;
+    const storagePath = `resources/${book.id}/${storedName}`;
+    await uploadSupabaseObject(storagePath, file);
+    storedFile = {
+      originalName: file.originalname,
+      storedName,
+      relativePath: storagePath,
+      bucket: supabaseStorageBucket,
+      size: file.size
+    };
+  }
+
+  const storedBook = {
+    ...book,
+    storage: {
+      provider: "supabase",
+      persistedAt: new Date().toISOString(),
+      parsedResourcePath: `${supabaseResourcesTable}.resource`,
+      file: storedFile
+    }
+  };
+
+  await supabaseRestRequest(`/${encodeURIComponent(supabaseResourcesTable)}`, {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      id: storedBook.id,
+      resource: storedBook,
+      storage_path: storedFile?.relativePath || null
+    })
+  });
+
+  return storedBook;
+}
+
+async function readStoredResourcesFromSupabase() {
+  const rows = await supabaseRestRequest(
+    `/${encodeURIComponent(supabaseResourcesTable)}?select=resource&order=created_at.desc`
+  );
+  return Array.isArray(rows) ? rows.map((row) => row.resource).filter(Boolean) : [];
+}
+
+async function deleteStoredResourceFromSupabase(id) {
+  const rows = await supabaseRestRequest(
+    `/${encodeURIComponent(supabaseResourcesTable)}?select=resource,storage_path&id=eq.${encodeURIComponent(id)}`
+  );
+  const target = Array.isArray(rows) ? rows[0] : null;
+  if (!target) return false;
+
+  if (target.storage_path) {
+    await deleteSupabaseObject(target.storage_path);
+  }
+
+  await supabaseRestRequest(`/${encodeURIComponent(supabaseResourcesTable)}?id=eq.${encodeURIComponent(id)}`, {
+    method: "DELETE"
+  });
+  return true;
+}
+
+async function updateStoredResourceInSupabase(id, changes) {
+  const rows = await supabaseRestRequest(
+    `/${encodeURIComponent(supabaseResourcesTable)}?select=resource,storage_path&id=eq.${encodeURIComponent(id)}`
+  );
+  const target = Array.isArray(rows) ? rows[0] : null;
+  if (!target?.resource) return null;
+
+  const updated = applyResourceChanges(target.resource, changes);
+  await supabaseRestRequest(`/${encodeURIComponent(supabaseResourcesTable)}?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      resource: updated,
+      storage_path: target.storage_path || updated.storage?.file?.relativePath || null
+    })
+  });
+  return updated;
+}
+
+function applyResourceChanges(resource, changes) {
+  const title = cleanText(changes.title);
+  const author = cleanText(changes.author);
+  const language = cleanText(changes.language);
+  const tags = normalizeTags(changes.tags);
+
+  return {
+    ...resource,
+    ...(title ? { title } : {}),
+    ...(author ? { author } : {}),
+    ...(language ? { language } : {}),
+    ...(tags ? { tags } : {}),
+    storage: {
+      ...(resource.storage || {}),
+      updatedAt: new Date().toISOString()
+    }
+  };
+}
+
+function cleanText(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeTags(value) {
+  if (value === undefined) return null;
+  const raw = Array.isArray(value) ? value : String(value).split(/[,，]/);
+  const tags = raw.map((tag) => String(tag).trim()).filter(Boolean);
+  return Array.from(new Set(tags)).slice(0, 12);
+}
+
+async function uploadSupabaseObject(storagePath, file) {
+  await supabaseStorageRequest(`/object/${encodeURIComponent(supabaseStorageBucket)}/${encodeStoragePath(storagePath)}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": file.mimetype || "application/octet-stream",
+      "x-upsert": "true"
+    },
+    body: file.buffer
+  });
+}
+
+async function deleteSupabaseObject(storagePath) {
+  await supabaseStorageRequest(`/object/${encodeURIComponent(supabaseStorageBucket)}`, {
+    method: "DELETE",
+    body: JSON.stringify({ prefixes: [storagePath] })
+  });
+}
+
+async function supabaseRestRequest(pathname, options = {}) {
+  return supabaseRequest(`/rest/v1${pathname}`, options);
+}
+
+async function supabaseStorageRequest(pathname, options = {}) {
+  return supabaseRequest(`/storage/v1${pathname}`, options);
+}
+
+async function supabaseRequest(pathname, options = {}) {
+  const response = await fetch(`${supabaseUrl}${pathname}`, {
+    ...options,
+    headers: {
+      apikey: supabaseServiceKey,
+      Authorization: `Bearer ${supabaseServiceKey}`,
+      ...(options.body && !(options.body instanceof Buffer) ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers || {})
+    }
+  });
+
+  const text = await response.text();
+  const data = text ? parseJson(text) || text : null;
+  if (!response.ok) {
+    throw new Error(`Supabase request failed: ${response.status} ${typeof data === "string" ? data : JSON.stringify(data).slice(0, 500)}`);
+  }
+  return data;
+}
+
+function encodeStoragePath(value) {
+  return String(value).split("/").map(encodeURIComponent).join("/");
 }
 
 function fallbackTranslation(text, target) {
@@ -459,7 +674,7 @@ function fallbackQuestions(mapTitle, nodes) {
     `这个结构图背后最尖锐的问题是什么？请不要只复述「${first}」。`,
     "哪两个节点之间存在冲突、张力或互相补充？",
     "你能用一个现实例子证明或挑战这张图的核心判断吗？",
-    "如果把这张图改写成英文 thesis statement，最短的一句话是什么？"
+    "如果把这张图改写成一句中文中心论点，最短、最有力量的表达是什么？"
   ];
 }
 

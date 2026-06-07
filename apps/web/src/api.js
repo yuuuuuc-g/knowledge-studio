@@ -40,3 +40,14 @@ export async function deleteResource(id) {
   if (!response.ok) throw new Error(data.error || `Delete failed: ${response.status}`);
   return data;
 }
+
+export async function updateResource(id, payload) {
+  const response = await fetch(`/api/resources/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || `Update failed: ${response.status}`);
+  return data;
+}

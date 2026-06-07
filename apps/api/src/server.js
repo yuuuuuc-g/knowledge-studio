@@ -6,12 +6,13 @@ import AdmZip from "adm-zip";
 import { XMLParser } from "fast-xml-parser";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
-const dataDir = path.resolve(__dirname, "../data");
+const dataDir = process.env.VERCEL ? path.join(os.tmpdir(), "knowledge-studio") : path.resolve(__dirname, "../data");
 const uploadsDir = path.join(dataDir, "uploads");
 const resourcesFile = path.join(dataDir, "resources.json");
 
@@ -170,10 +171,14 @@ app.use((error, _req, res, _next) => {
   res.status(500).json({ error: error.message || "Internal server error" });
 });
 
-app.listen(port, "127.0.0.1", () => {
-  console.log(`Knowledge Studio API running at http://127.0.0.1:${port}`);
-  if (!aiKey) console.log("AI_API_KEY is empty. AI endpoints will return local fallbacks.");
-});
+if (!process.env.VERCEL) {
+  app.listen(port, "127.0.0.1", () => {
+    console.log(`Knowledge Studio API running at http://127.0.0.1:${port}`);
+    if (!aiKey) console.log("AI_API_KEY is empty. AI endpoints will return local fallbacks.");
+  });
+}
+
+export default app;
 
 async function callOpenAiText(messages, options = {}) {
   const response = await fetch(`${aiBaseUrl.replace(/\/$/, "")}/chat/completions`, {

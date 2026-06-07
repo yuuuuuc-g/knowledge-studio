@@ -49,6 +49,25 @@ AI_MODEL=deepseek-v4-flash
 
 如果需要更强推理能力，可以把 `AI_MODEL` 改成 `deepseek-v4-pro`。
 
+## Vercel Deploy
+
+Vercel 项目的 Root Directory 应保持为仓库根目录，不要选 `apps/api` 或 `apps/web`。根目录的 `vercel.json` 会负责：
+
+- 构建前端：`npm run build -w apps/web`
+- 发布目录：`apps/web/dist`
+- 把非 `/api` 路径回退到 `index.html`
+- 把 `/api/*` 交给根目录 `api/[...path].js` 中的 Serverless Function
+
+需要在 Vercel Project Settings -> Environment Variables 配置：
+
+```bash
+AI_API_KEY=你的 DeepSeek API Key
+AI_BASE_URL=https://api.deepseek.com
+AI_MODEL=deepseek-v4-flash
+```
+
+注意：Vercel Serverless 文件系统不是长期存储。生产环境如果要长期保存上传的电子书和解析结果，需要接入 Vercel Blob、数据库或对象存储。
+
 ## GitNexus
 
 GitNexus CLI 已在本机可用。后续可在本项目目录运行：

@@ -2,20 +2,20 @@
   --ink: #211a14;
   --muted: #695d52;
   --faint: #9b9185;
-  --nav: #9a6a1e;
-  --nav-deep: #5d3c10;
+  --nav: #af7b25;
+  --nav-deep: #6d4712;
   --nav-panel: #fffaf0;
-  --gold: #b9872d;
-  --gold-bright: #f4dfaa;
-  --gold-soft: #d9b469;
-  --gold-deep: #6d4712;
+  --gold: #d4a64c;
+  --gold-bright: #fff0bf;
+  --gold-soft: #e6c579;
+  --gold-deep: #7a5218;
   --paper: #f6f2e9;
   --paper-light: #fffdf8;
   --paper-deep: #e8ddca;
-  --line: #c79b50;
-  --line-soft: #e3c995;
+  --line: #deb669;
+  --line-soft: #edd7a4;
   --sage: #f3ead5;
-  --sage-ink: #744f17;
+  --sage-ink: #80591b;
   --danger: #8a2e24;
   --danger-soft: #fff7f2;
   --marble:
@@ -30,7 +30,7 @@
     linear-gradient(26deg, transparent 0 48%, rgba(122, 110, 98, 0.045) 48.4%, transparent 51%),
     rgba(255, 253, 248, 0.72);
   --gold-metal:
-    linear-gradient(180deg, rgba(255, 244, 197, 0.98) 0%, rgba(190, 139, 44, 0.96) 35%, rgba(126, 82, 19, 0.98) 100%);
+    linear-gradient(180deg, rgba(255, 247, 210, 0.98) 0%, rgba(224, 177, 79, 0.98) 38%, rgba(145, 95, 24, 0.98) 100%);
   color: var(--ink);
   background: var(--paper);
   font-family: Georgia, "Times New Roman", "Noto Serif SC", "Songti SC", serif;
@@ -55,7 +55,7 @@ body::before {
   pointer-events: none;
   background:
     linear-gradient(90deg, transparent 0 58%, rgba(178, 142, 86, 0.12) 78%, transparent 100%),
-    radial-gradient(ellipse at 48% 96%, rgba(185, 135, 45, 0.18), transparent 20%),
+    radial-gradient(ellipse at 48% 96%, rgba(212, 166, 76, 0.18), transparent 20%),
     linear-gradient(rgba(255, 255, 255, 0.38), rgba(231, 218, 196, 0.12));
   z-index: -2;
 }
@@ -113,7 +113,7 @@ textarea:focus-visible {
   gap: 14px;
   padding: 0 18px;
   border-top: 1px solid rgba(215, 180, 112, 0.75);
-  border-bottom: 2px solid rgba(185, 135, 45, 0.84);
+  border-bottom: 2px solid rgba(212, 166, 76, 0.84);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 250, 242, 0.64)),
     var(--marble);
@@ -133,19 +133,19 @@ textarea:focus-visible {
   top: 12px;
   bottom: 12px;
   width: 70px;
-  border-top: 1px solid rgba(185, 135, 45, 0.42);
-  border-bottom: 1px solid rgba(185, 135, 45, 0.34);
+  border-top: 1px solid rgba(212, 166, 76, 0.42);
+  border-bottom: 1px solid rgba(212, 166, 76, 0.34);
   pointer-events: none;
 }
 
 .topbar::before {
   left: 12px;
-  border-left: 1px solid rgba(185, 135, 45, 0.36);
+  border-left: 1px solid rgba(212, 166, 76, 0.36);
 }
 
 .topbar::after {
   right: 12px;
-  border-right: 1px solid rgba(185, 135, 45, 0.36);
+  border-right: 1px solid rgba(212, 166, 76, 0.36);
 }
 
 .brand {
@@ -208,7 +208,7 @@ textarea:focus-visible {
   padding: 0 16px;
   color: #4f4031;
   background: transparent;
-  border-left: 1px solid rgba(185, 135, 45, 0.22);
+  border-left: 1px solid rgba(212, 166, 76, 0.22);
   border-right: 1px solid rgba(255, 255, 255, 0.72);
   font-size: 16px;
   font-weight: 700;
@@ -224,8 +224,8 @@ textarea:focus-visible {
 }
 
 .tabs button.active {
-  border-left-color: rgba(185, 135, 45, 0.58);
-  border-right-color: rgba(185, 135, 45, 0.58);
+  border-left-color: rgba(212, 166, 76, 0.58);
+  border-right-color: rgba(212, 166, 76, 0.58);
   box-shadow:
     inset 0 -4px 0 var(--gold),
     inset 0 0 0 1px rgba(255, 244, 202, 0.75),
@@ -240,8 +240,8 @@ textarea:focus-visible {
   width: 18px;
   height: 18px;
   transform: translateX(-50%) rotate(45deg);
-  border-right: 1px solid rgba(185, 135, 45, 0.72);
-  border-bottom: 1px solid rgba(185, 135, 45, 0.72);
+  border-right: 1px solid rgba(212, 166, 76, 0.72);
+  border-bottom: 1px solid rgba(212, 166, 76, 0.72);
   background:
     radial-gradient(circle at 50% 50%, var(--gold-bright) 0 2px, transparent 3px),
     var(--gold-metal);
@@ -253,7 +253,7 @@ textarea:focus-visible {
 .apiPill {
   align-self: center;
   padding: 7px 12px;
-  border: 1px solid rgba(185, 135, 45, 0.42);
+  border: 1px solid rgba(212, 166, 76, 0.42);
   border-radius: 999px;
   color: var(--gold-deep);
   background:
@@ -468,7 +468,7 @@ p {
 .errorPanel,
 .questionPanel,
 .richEditor,
-.translationGrid label {
+.translationPanel {
   border: 1px solid var(--line);
   background:
     var(--panel-marble);
@@ -476,7 +476,7 @@ p {
   box-shadow:
     0 18px 34px rgba(66, 48, 23, 0.12),
     inset 0 0 0 3px rgba(255, 255, 255, 0.76),
-    inset 0 0 0 4px rgba(199, 154, 75, 0.2);
+    inset 0 0 0 4px rgba(222, 182, 105, 0.2);
   position: relative;
 }
 
@@ -484,21 +484,22 @@ p {
 .mapCard::after,
 .resourceForm::after,
 .draftPane::after,
-.structureRail::after {
+.structureRail::after,
+.translationPanel::after {
   content: "";
   position: absolute;
   inset: 7px;
-  border: 1px solid rgba(199, 154, 75, 0.24);
+  border: 1px solid rgba(222, 182, 105, 0.24);
   clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
   background:
-    radial-gradient(circle at 0 0, transparent 0 9px, rgba(185, 135, 45, 0.58) 10px 11px, transparent 12px) top left / 34px 34px no-repeat,
-    radial-gradient(circle at 100% 0, transparent 0 9px, rgba(185, 135, 45, 0.58) 10px 11px, transparent 12px) top right / 34px 34px no-repeat,
-    radial-gradient(circle at 0 100%, transparent 0 9px, rgba(185, 135, 45, 0.58) 10px 11px, transparent 12px) bottom left / 34px 34px no-repeat,
-    radial-gradient(circle at 100% 100%, transparent 0 9px, rgba(185, 135, 45, 0.58) 10px 11px, transparent 12px) bottom right / 34px 34px no-repeat,
-    linear-gradient(45deg, transparent 0 10px, rgba(185, 135, 45, 0.62) 10px 11px, transparent 12px) top left / 28px 28px no-repeat,
-    linear-gradient(-45deg, transparent 0 10px, rgba(185, 135, 45, 0.62) 10px 11px, transparent 12px) top right / 28px 28px no-repeat,
-    linear-gradient(-45deg, transparent 0 10px, rgba(185, 135, 45, 0.62) 10px 11px, transparent 12px) bottom left / 28px 28px no-repeat,
-    linear-gradient(45deg, transparent 0 10px, rgba(185, 135, 45, 0.62) 10px 11px, transparent 12px) bottom right / 28px 28px no-repeat;
+    radial-gradient(circle at 0 0, transparent 0 9px, rgba(212, 166, 76, 0.58) 10px 11px, transparent 12px) top left / 34px 34px no-repeat,
+    radial-gradient(circle at 100% 0, transparent 0 9px, rgba(212, 166, 76, 0.58) 10px 11px, transparent 12px) top right / 34px 34px no-repeat,
+    radial-gradient(circle at 0 100%, transparent 0 9px, rgba(212, 166, 76, 0.58) 10px 11px, transparent 12px) bottom left / 34px 34px no-repeat,
+    radial-gradient(circle at 100% 100%, transparent 0 9px, rgba(212, 166, 76, 0.58) 10px 11px, transparent 12px) bottom right / 34px 34px no-repeat,
+    linear-gradient(45deg, transparent 0 10px, rgba(212, 166, 76, 0.62) 10px 11px, transparent 12px) top left / 28px 28px no-repeat,
+    linear-gradient(-45deg, transparent 0 10px, rgba(212, 166, 76, 0.62) 10px 11px, transparent 12px) top right / 28px 28px no-repeat,
+    linear-gradient(-45deg, transparent 0 10px, rgba(212, 166, 76, 0.62) 10px 11px, transparent 12px) bottom left / 28px 28px no-repeat,
+    linear-gradient(45deg, transparent 0 10px, rgba(212, 166, 76, 0.62) 10px 11px, transparent 12px) bottom right / 28px 28px no-repeat;
   pointer-events: none;
 }
 
@@ -510,7 +511,7 @@ p {
   gap: 10px;
   padding: 22px 24px 20px;
   overflow-wrap: anywhere;
-  border-color: rgba(185, 135, 45, 0.68);
+  border-color: rgba(212, 166, 76, 0.68);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 250, 240, 0.4) 48%, rgba(228, 212, 185, 0.22)),
     var(--panel-marble);
@@ -522,7 +523,7 @@ p {
     0 0 0 1px rgba(255, 253, 248, 0.76),
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
     inset 0 0 0 3px rgba(255, 253, 248, 0.5),
-    inset 0 0 0 4px rgba(185, 135, 45, 0.18);
+    inset 0 0 0 4px rgba(212, 166, 76, 0.18);
   filter:
     drop-shadow(0 18px 22px rgba(66, 47, 20, 0.13))
     drop-shadow(0 5px 7px rgba(105, 74, 25, 0.08));
@@ -547,7 +548,7 @@ p {
 
 .bookCard::after {
   z-index: 0;
-  border-color: rgba(199, 154, 75, 0.34);
+  border-color: rgba(222, 182, 105, 0.34);
 }
 
 .bookCard > * {
@@ -566,7 +567,7 @@ p {
     0 0 0 1px rgba(255, 253, 248, 0.82),
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
     inset 0 0 0 3px rgba(255, 253, 248, 0.56),
-    inset 0 0 0 4px rgba(185, 135, 45, 0.24);
+    inset 0 0 0 4px rgba(212, 166, 76, 0.24);
 }
 
 .bookCard h2 {
@@ -589,7 +590,7 @@ p {
     var(--gold-metal);
   font-weight: 700;
   box-shadow:
-    inset 0 0 0 2px rgba(107, 70, 16, 0.34),
+    inset 0 0 0 2px rgba(145, 95, 24, 0.34),
     inset 0 1px 0 rgba(255, 247, 213, 0.85),
     0 8px 18px rgba(91, 58, 13, 0.2);
   text-shadow: 0 1px 0 rgba(73, 45, 8, 0.52);
@@ -662,7 +663,7 @@ p {
 .bookActions .dangerButton {
   min-width: 80px;
   color: var(--danger);
-  border-color: rgba(185, 135, 45, 0.52);
+  border-color: rgba(212, 166, 76, 0.52);
   border-radius: 16px 6px 16px 6px / 8px 16px 8px 16px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 247, 238, 0.74));
@@ -759,7 +760,7 @@ p {
   border-right: 1px solid var(--gold);
   color: #fff9e8;
   background: var(--gold-metal);
-  box-shadow: inset 0 0 0 2px rgba(107, 70, 16, 0.34);
+  box-shadow: inset 0 0 0 2px rgba(145, 95, 24, 0.34);
 }
 
 .fileName {
@@ -883,7 +884,7 @@ p {
 
 .whiteboardTop button {
   color: var(--gold-deep);
-  border-color: rgba(185, 135, 45, 0.42);
+  border-color: rgba(212, 166, 76, 0.42);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(249, 240, 220, 0.68)),
     linear-gradient(118deg, transparent 0 28%, rgba(124, 108, 94, 0.055) 28.4%, transparent 31% 72%, rgba(130, 116, 98, 0.045) 72.5%, transparent 75%),
@@ -980,7 +981,7 @@ p {
   display: grid;
   place-items: center;
   padding: 10px 12px;
-  border: 1px dashed rgba(199, 154, 75, 0.58);
+  border: 1px dashed rgba(222, 182, 105, 0.58);
   color: var(--sage-ink);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 243, 213, 0.7));
@@ -992,7 +993,7 @@ p {
   height: auto;
   min-height: 60px;
   padding: 10px 12px;
-  border: 1px solid rgba(199, 154, 75, 0.42);
+  border: 1px solid rgba(222, 182, 105, 0.42);
   color: var(--ink);
   background:
     linear-gradient(180deg, rgba(255, 249, 231, 0.94), rgba(244, 231, 199, 0.8));
@@ -1009,7 +1010,7 @@ p {
   color: var(--ink);
   background:
     linear-gradient(180deg, rgba(255, 253, 247, 0.98), rgba(248, 237, 213, 0.86));
-  border-color: rgba(199, 154, 75, 0.62);
+  border-color: rgba(222, 182, 105, 0.62);
   box-shadow:
     inset 0 0 0 1px rgba(255, 249, 236, 0.8),
     0 6px 12px rgba(75, 49, 20, 0.08);
@@ -1060,18 +1061,107 @@ p {
   gap: 18px;
 }
 
-.translationGrid label {
+.translationPanel {
   display: grid;
+  grid-template-rows: auto minmax(340px, 1fr);
   gap: 10px;
-  padding: 14px;
+  padding: 16px;
   color: var(--sage-ink);
   font-weight: 800;
+  overflow: hidden;
+}
+
+.translationPanelHead {
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(212, 166, 76, 0.24);
+}
+
+.translationPanelHead span {
+  color: var(--gold-deep);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.translateTools {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.translateTools select {
+  width: 128px;
+  min-height: 38px;
+  border-color: rgba(212, 166, 76, 0.38);
+  color: var(--sage-ink);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(250, 244, 233, 0.68));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 6px 14px rgba(91, 62, 21, 0.08);
+}
+
+.paperButton {
+  min-height: 38px;
+  padding: 0 18px;
+  color: var(--gold-deep);
+  border: 1px solid rgba(212, 166, 76, 0.48);
+  background:
+    radial-gradient(ellipse at 50% 0, rgba(255, 255, 255, 0.9), transparent 50%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(249, 240, 220, 0.74) 45%, rgba(236, 222, 194, 0.64)),
+    linear-gradient(118deg, transparent 0 28%, rgba(124, 108, 94, 0.055) 28.4%, transparent 31% 72%, rgba(130, 116, 98, 0.045) 72.5%, transparent 75%);
+  box-shadow:
+    0 10px 22px rgba(91, 62, 21, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 0 0 2px rgba(255, 253, 248, 0.7),
+    inset 0 -1px 0 rgba(157, 116, 44, 0.14);
+  font-weight: 900;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.paperButton:hover {
+  transform: translateY(-1px);
+  color: #6f4810;
+  border-color: rgba(212, 166, 76, 0.64);
+  background:
+    radial-gradient(ellipse at 50% 0, rgba(255, 255, 255, 0.96), transparent 52%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(252, 244, 225, 0.82) 45%, rgba(239, 224, 194, 0.7));
+  box-shadow:
+    0 14px 26px rgba(91, 62, 21, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    inset 0 0 0 2px rgba(255, 253, 248, 0.76);
+}
+
+.paperButton:disabled {
+  cursor: wait;
+  opacity: 0.78;
+  transform: translateY(0);
+  color: rgba(111, 72, 16, 0.82);
+  background:
+    linear-gradient(135deg, rgba(246, 240, 226, 0.86), rgba(232, 220, 196, 0.7)),
+    linear-gradient(118deg, transparent 0 28%, rgba(124, 108, 94, 0.06) 28.4%, transparent 31% 72%, rgba(130, 116, 98, 0.05) 72.5%, transparent 75%);
+  box-shadow:
+    inset 0 2px 6px rgba(91, 62, 21, 0.12),
+    inset 0 0 0 2px rgba(255, 253, 248, 0.58);
 }
 
 .translationGrid textarea {
+  position: relative;
+  z-index: 1;
   min-height: 340px;
   resize: vertical;
   line-height: 1.7;
+  border-color: rgba(212, 166, 76, 0.24);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 250, 240, 0.54));
 }
 
 .view-bookshelf {
@@ -1111,17 +1201,17 @@ p {
 
 .view-bookshelf .tabs button,
 .view-bookshelf .tabs button:hover {
-  border-color: rgba(185, 135, 45, 0.22);
+  border-color: rgba(212, 166, 76, 0.22);
   background: rgba(255, 255, 255, 0.2);
 }
 
 .view-bookshelf .tabs button.active {
   color: var(--gold-deep);
-  border-color: rgba(185, 135, 45, 0.44);
+  border-color: rgba(212, 166, 76, 0.44);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(248, 239, 218, 0.58));
   box-shadow:
-    inset 0 -3px 0 rgba(185, 135, 45, 0.84),
+    inset 0 -3px 0 rgba(212, 166, 76, 0.84),
     0 10px 20px rgba(105, 72, 24, 0.1);
 }
 
@@ -1131,7 +1221,7 @@ p {
 
 .view-bookshelf .apiPill {
   margin-right: 8px;
-  border-color: rgba(185, 135, 45, 0.42);
+  border-color: rgba(212, 166, 76, 0.42);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(249, 241, 225, 0.72));
   box-shadow:
@@ -1154,14 +1244,14 @@ p {
   padding: 20px 18px;
   align-self: stretch;
   border-right: 0;
-  border: 1px solid rgba(185, 135, 45, 0.36);
+  border: 1px solid rgba(212, 166, 76, 0.36);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(255, 248, 236, 0.4)),
     rgba(255, 255, 255, 0.28);
   box-shadow:
     0 18px 38px rgba(89, 63, 27, 0.14),
     inset 0 0 0 3px rgba(255, 255, 255, 0.54),
-    inset 0 0 0 4px rgba(199, 154, 75, 0.12);
+    inset 0 0 0 4px rgba(222, 182, 105, 0.12);
   backdrop-filter: blur(14px) saturate(1.04);
   -webkit-backdrop-filter: blur(14px) saturate(1.04);
 }
@@ -1178,7 +1268,7 @@ p {
 .view-bookshelf .bookshelfSidebarTop {
   margin-bottom: 14px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(185, 135, 45, 0.32);
+  border-bottom: 1px solid rgba(212, 166, 76, 0.32);
 }
 
 .view-bookshelf .sidebarCollapsed .bookshelfSidebarTop {
@@ -1190,7 +1280,7 @@ p {
 }
 
 .view-bookshelf .sidebarToggle {
-  border-color: rgba(185, 135, 45, 0.42);
+  border-color: rgba(212, 166, 76, 0.42);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(250, 240, 218, 0.52));
   box-shadow:
@@ -1207,14 +1297,14 @@ p {
   min-height: auto;
   margin-bottom: 26px;
   padding-bottom: 18px;
-  border-bottom: 1px solid rgba(185, 135, 45, 0.28);
+  border-bottom: 1px solid rgba(212, 166, 76, 0.28);
 }
 
 .view-bookshelf .sectionHead::after {
   display: block;
   width: 108px;
   background:
-    linear-gradient(90deg, transparent, rgba(185, 135, 45, 0.65), transparent),
+    linear-gradient(90deg, transparent, rgba(212, 166, 76, 0.65), transparent),
     radial-gradient(circle at 50% 50%, var(--gold) 0 3px, transparent 4px);
 }
 
@@ -1228,7 +1318,7 @@ p {
 
 .view-bookshelf .resourceForm,
 .view-bookshelf .bookCard {
-  border: 1px solid rgba(185, 135, 45, 0.42);
+  border: 1px solid rgba(212, 166, 76, 0.42);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(255, 250, 240, 0.36)),
     rgba(255, 255, 255, 0.3);
@@ -1237,7 +1327,7 @@ p {
     0 20px 44px rgba(89, 63, 27, 0.15),
     0 7px 16px rgba(128, 91, 30, 0.08),
     inset 0 0 0 3px rgba(255, 255, 255, 0.54),
-    inset 0 0 0 4px rgba(199, 154, 75, 0.12);
+    inset 0 0 0 4px rgba(222, 182, 105, 0.12);
   filter:
     drop-shadow(0 14px 16px rgba(91, 62, 22, 0.1));
   backdrop-filter: blur(14px) saturate(1.06);
@@ -1247,7 +1337,7 @@ p {
 .view-bookshelf .resourceForm::after,
 .view-bookshelf .bookCard::after {
   display: block;
-  border-color: rgba(185, 135, 45, 0.22);
+  border-color: rgba(212, 166, 76, 0.22);
 }
 
 .view-bookshelf .bookCard::before {
@@ -1371,7 +1461,7 @@ p {
   display: grid;
   gap: 12px;
   padding: 20px;
-  border: 1px solid rgba(185, 135, 45, 0.48);
+  border: 1px solid rgba(212, 166, 76, 0.48);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 248, 236, 0.62)),
     rgba(255, 255, 255, 0.34);
@@ -1379,7 +1469,7 @@ p {
   box-shadow:
     0 26px 70px rgba(48, 34, 14, 0.28),
     inset 0 0 0 3px rgba(255, 255, 255, 0.58),
-    inset 0 0 0 4px rgba(199, 154, 75, 0.14);
+    inset 0 0 0 4px rgba(222, 182, 105, 0.14);
 }
 
 .editPanelHead {
@@ -1388,7 +1478,7 @@ p {
   justify-content: space-between;
   gap: 12px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(185, 135, 45, 0.28);
+  border-bottom: 1px solid rgba(212, 166, 76, 0.28);
   color: var(--gold-deep);
   font-size: 18px;
 }
@@ -1397,7 +1487,7 @@ p {
   width: 34px;
   height: 34px;
   color: var(--gold-deep);
-  border: 1px solid rgba(185, 135, 45, 0.36);
+  border: 1px solid rgba(212, 166, 76, 0.36);
   background: rgba(255, 255, 255, 0.42);
 }
 
@@ -1539,5 +1629,16 @@ p {
 
   .bookActions {
     grid-template-columns: 1fr;
+  }
+
+  .translationPanelHead,
+  .translateTools {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .translateTools select,
+  .paperButton {
+    width: 100%;
   }
 }

@@ -42,6 +42,7 @@ function App() {
   const [questions, setQuestions] = useState([]);
   const [questionLoading, setQuestionLoading] = useState(false);
   const [translation, setTranslation] = useState({ source: "", target: "English", output: "" });
+  const [translationLoading, setTranslationLoading] = useState(false);
   const [loading, setLoading] = useState("");
   const [health, setHealth] = useState({ ok: false, aiConfigured: false });
   const sceneSaveTimer = useRef(null);
@@ -106,7 +107,7 @@ function App() {
   }
 
   async function translateText() {
-    setLoading("正在 AI 转译...");
+    setTranslationLoading(true);
     try {
       const result = await postJson("/api/translate", {
         text: translation.source || stripHtml(draft),
@@ -114,7 +115,7 @@ function App() {
       });
       setTranslation((current) => ({ ...current, output: result.output || "" }));
     } finally {
-      setLoading("");
+      setTranslationLoading(false);
     }
   }
 
@@ -240,7 +241,13 @@ function App() {
       ) : null}
 
       {view === "publish" ? (
-        <PublishPanel draft={draft} translation={translation} setTranslation={setTranslation} onTranslate={translateText} />
+        <PublishPanel
+          draft={draft}
+          translation={translation}
+          setTranslation={setTranslation}
+          translationLoading={translationLoading}
+          onTranslate={translateText}
+        />
       ) : null}
     </div>
   );
@@ -514,24 +521,43 @@ function EditorPanel({ map, draft, setDraft, questions, questionLoading, generat
   );
 }
 
-function PublishPanel({ draft, translation, setTranslation, onTranslate }) {
+function PublishPanel({ draft, translation, setTranslation, translationLoading, onTranslate }) {
   const text = translation.source || stripHtml(draft);
+  const outputText = translationLoading ? "正在 AI 转译..." : translation.output;
   return (
     <main className="page">
       <section className="sectionHead">
         <div>
           <h1>发布与转译</h1>
         </div>
-        <select value={translation.target} onChange={(event) => setTranslation({ ...translation, target: event.target.value })}>
-          <option>English</option>
-          <option>Spanish</option>
-          <option>Chinese</option>
-        </select>
-        <button onClick={onTranslate}>AI 转译</button>
       </section>
       <div className="translationGrid">
-        <label>可转译文本<textarea value={text} onChange={(event) => setTranslation({ ...translation, source: event.target.value })} /></label>
-        <label>转译结果<textarea value={translation.output} onChange={(event) => setTranslation({ ...translation, output: event.target.value })} /></label>
+        <section className="translationPanel sourcePanel">
+          <div className="translationPanelHead">
+            <span>可转译文本</span>
+            <div className="translateTools">
+              <select value={translation.target} onChange={(event) => setTranslation({ ...translation, target: event.target.value })}>
+                <option>English</option>
+                <option>Spanish</option>
+                <option>Chinese</option>
+              </select>
+              <button className="paperButton" onClick={onTranslate} disabled={translationLoading}>
+                {translationLoading ? "转译中" : "AI转译"}
+              </button>
+            </div>
+          </div>
+          <textarea value={text} onChange={(event) => setTranslation({ ...translation, source: event.target.value })} />
+        </section>
+        <section className="translationPanel">
+          <div className="translationPanelHead">
+            <span>转译结果</span>
+          </div>
+          <textarea
+            value={outputText}
+            readOnly={translationLoading}
+            onChange={(event) => setTranslation({ ...translation, output: event.target.value })}
+          />
+        </section>
       </div>
     </main>
   );

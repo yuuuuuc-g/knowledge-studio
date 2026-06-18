@@ -37,6 +37,11 @@ function mergeBooks(...groups) {
   });
 }
 
+function hideDeletedBooks(books, deletedResourceIds) {
+  const deleted = new Set(deletedResourceIds);
+  return books.filter((book) => !deleted.has(book.id));
+}
+
 function canCreateLocalResource(form) {
   const file = form.get("resource");
   const text = cleanFormText(form.get("supplementalText"));
@@ -112,7 +117,8 @@ function extractParagraphs(text) {
 function App() {
   const [view, setView] = useState("bookshelf");
   const [localResources, setLocalResources] = useStoredState("ks-local-resources-v1", []);
-  const [books, setBooks] = useState(() => mergeBooks(localResources, initialBooks));
+  const [deletedResourceIds, setDeletedResourceIds] = useStoredState("ks-deleted-resource-ids-v1", []);
+  const [books, setBooks] = useState(() => hideDeletedBooks(mergeBooks(localResources, initialBooks), deletedResourceIds));
   const [maps, setMaps] = useStoredState("ks-maps-v3", [createDefaultMap(initialBooks[0])]);
   const [selectedBookId, setSelectedBookId] = useState(initialBooks[0].id);
   const [selectedParagraph, setSelectedParagraph] = useState(0);
@@ -141,15 +147,15 @@ function App() {
     getResources()
       .then((resources) => {
         if (cancelled) return;
-        setBooks(mergeBooks(resources, localResources, initialBooks));
+        setBooks(hideDeletedBooks(mergeBooks(resources, localResources, initialBooks), deletedResourceIds));
       })
       .catch(() => {
-        if (!cancelled) setBooks(mergeBooks(localResources, initialBooks));
+        if (!cancelled) setBooks(hideDeletedBooks(mergeBooks(localResources, initialBooks), deletedResourceIds));
       });
     return () => {
       cancelled = true;
     };
-  }, [localResources]);
+  }, [deletedResourceIds, localResources]);
 
   async function generateStructure() {
     setLoading("正在用 AI 预生成结构图...");
@@ -227,6 +233,7 @@ function App() {
         book = createLocalResource(form);
         setLocalResources((current) => mergeBooks([book], current));
       }
+      setDeletedResourceIds((current) => current.filter((id) => id !== book.id));
       setBooks((current) => mergeBooks([book], current));
       setSelectedBookId(book.id);
       formElement.reset();
@@ -244,6 +251,7 @@ function App() {
           console.warn("[resource-delete-warning]", error);
         });
       }
+      setDeletedResourceIds((current) => (current.includes(book.id) ? current : [book.id, ...current]));
       setLocalResources((current) => current.filter((item) => item.id !== book.id));
       setBooks((current) => {
         const remaining = current.filter((item) => item.id !== book.id);

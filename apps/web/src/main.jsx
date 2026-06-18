@@ -130,13 +130,14 @@ function App() {
 
   async function addResource(event) {
     event.preventDefault();
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     setLoading("正在导入资源...");
     try {
-      const form = new FormData(event.currentTarget);
       const book = await uploadResource(form);
       setBooks((current) => [book, ...current]);
       setSelectedBookId(book.id);
-      event.currentTarget.reset();
+      formElement.reset();
     } finally {
       setLoading("");
     }
@@ -257,6 +258,7 @@ function Bookshelf({ books, onRead, onAdd, onDelete, onEdit }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [fileName, setFileName] = useState("");
   const [editingBook, setEditingBook] = useState(null);
+  const [submitError, setSubmitError] = useState("");
 
   function getTitleSize(title) {
     const weightedLength = Array.from(title || "").reduce((total, char) => {
@@ -272,8 +274,13 @@ function Bookshelf({ books, onRead, onAdd, onDelete, onEdit }) {
   }
 
   async function handleAdd(event) {
-    await onAdd(event);
-    setFileName("");
+    try {
+      setSubmitError("");
+      await onAdd(event);
+      setFileName("");
+    } catch (error) {
+      setSubmitError(error.message || "保存失败，请稍后再试。");
+    }
   }
 
   async function handleEdit(event) {
@@ -325,7 +332,8 @@ function Bookshelf({ books, onRead, onAdd, onDelete, onEdit }) {
             <input name="author" placeholder="作者或来源" />
             <select name="language"><option>中文</option><option>English</option><option>Espanol</option></select>
             <textarea name="supplementalText" rows="6" placeholder="可选：为 PDF、MOBI、AZW3 或解析失败的 EPUB 补充可先阅读的正文；或在没有文件时粘贴文本。" />
-            <button>保存到书架</button>
+            {submitError ? <p className="formError" role="alert">{submitError}</p> : null}
+            <button type="submit">保存到书架</button>
           </form>
         ) : null}
       </aside>

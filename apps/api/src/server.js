@@ -223,7 +223,9 @@ async function callOpenAiText(messages, options = {}) {
 }
 
 async function persistResource(book, file) {
-  if (supabaseEnabled) return persistResourceToSupabase(book, file);
+  if (supabaseEnabled) {
+    return withLocalStorageFallback("persist resource", () => persistResourceToSupabase(book, file), () => persistResourceToLocal(book, file));
+  }
   return persistResourceToLocal(book, file);
 }
 
@@ -258,12 +260,16 @@ async function persistResourceToLocal(book, file) {
 }
 
 async function deleteStoredResource(id) {
-  if (supabaseEnabled) return deleteStoredResourceFromSupabase(id);
+  if (supabaseEnabled) {
+    return withLocalStorageFallback("delete resource", () => deleteStoredResourceFromSupabase(id), () => deleteStoredResourceFromLocal(id));
+  }
   return deleteStoredResourceFromLocal(id);
 }
 
 async function updateStoredResource(id, changes) {
-  if (supabaseEnabled) return updateStoredResourceInSupabase(id, changes);
+  if (supabaseEnabled) {
+    return withLocalStorageFallback("update resource", () => updateStoredResourceInSupabase(id, changes), () => updateStoredResourceInLocal(id, changes));
+  }
   return updateStoredResourceInLocal(id, changes);
 }
 
@@ -295,8 +301,26 @@ async function updateStoredResourceInLocal(id, changes) {
 }
 
 async function readStoredResources() {
-  if (supabaseEnabled) return readStoredResourcesFromSupabase();
+  if (supabaseEnabled) {
+    return withLocalStorageFallback("read resources", () => readStoredResourcesFromSupabase(), () => readStoredResourcesFromLocal());
+  }
   return readStoredResourcesFromLocal();
+}
+
+async function withLocalStorageFallback(action, primary, fallback) {
+  try {
+    return await primary();
+  } catch (error) {
+    if (!shouldUseLocalStorageFallback(error)) throw error;
+    console.warn(`[supabase-local-fallback] Could not ${action}; using local storage.`, error.message);
+    return fallback();
+  }
+}
+
+function shouldUseLocalStorageFallback(error) {
+  if (process.env.VERCEL) return false;
+  if (!supabaseEnabled) return false;
+  return error?.message?.includes("fetch failed") || error?.message?.includes("Supabase request failed");
 }
 
 async function readStoredResourcesFromLocal() {

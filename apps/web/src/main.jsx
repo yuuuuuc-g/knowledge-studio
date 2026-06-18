@@ -28,9 +28,91 @@ const store = {
   }
 };
 
+function mergeBooks(...groups) {
+  const seen = new Set();
+  return groups.flat().filter((book) => {
+    if (!book?.id || seen.has(book.id)) return false;
+    seen.add(book.id);
+    return true;
+  });
+}
+
+function canCreateLocalResource(form) {
+  const file = form.get("resource");
+  const text = cleanFormText(form.get("supplementalText"));
+  return !hasSelectedFile(file) && Boolean(text);
+}
+
+function createLocalResource(form) {
+  const text = cleanFormText(form.get("supplementalText"));
+  const language = cleanFormText(form.get("language")) || "中文";
+  const paragraphs = extractParagraphs(text);
+
+  if (!paragraphs.length) {
+    throw new Error("没有发现可导入的正文段落。");
+  }
+
+  return {
+    id: `local-book-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    title: cleanFormText(form.get("title")) || paragraphs[0].slice(0, 28) || "未命名资源",
+    author: cleanFormText(form.get("author")) || "本地文本",
+    language,
+    type: "个人资源",
+    sourceFormat: "manual",
+    fileName: "",
+    fileSize: 0,
+    importStatus: "ready",
+    importNote: "手动正文已导入本地书架。",
+    tags: ["个人资源", language, "manual"],
+    paragraphs,
+    storage: {
+      provider: "localStorage",
+      persistedAt: new Date().toISOString(),
+      parsedResourcePath: "ks-local-resources-v1",
+      file: null
+    }
+  };
+}
+
+function applyBookChanges(book, changes) {
+  const tags = Array.isArray(changes.tags) ? changes.tags : String(changes.tags || "").split(/[,，]/);
+  return {
+    ...book,
+    title: cleanFormText(changes.title) || book.title,
+    author: cleanFormText(changes.author) || book.author,
+    language: cleanFormText(changes.language) || book.language,
+    tags: tags.map((tag) => cleanFormText(tag)).filter(Boolean),
+    storage: {
+      ...(book.storage || {}),
+      updatedAt: new Date().toISOString()
+    }
+  };
+}
+
+function isLocalResource(book) {
+  return book?.storage?.provider === "localStorage" || String(book?.id || "").startsWith("local-book-");
+}
+
+function hasSelectedFile(file) {
+  return Boolean(file && typeof file.name === "string" && file.name && file.size > 0);
+}
+
+function cleanFormText(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function extractParagraphs(text) {
+  return String(text || "")
+    .split(/\n{2,}|\r?\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .slice(0, 240);
+}
+
 function App() {
   const [view, setView] = useState("bookshelf");
-  const [books, setBooks] = useState(initialBooks);
+  const [localResources, setLocalResources] = useStoredState("ks-local-resources-v1", []);
+  const [books, setBooks] = useState(() => mergeBooks(localResources, initialBooks));
   const [maps, setMaps] = useStoredState("ks-maps-v3", [createDefaultMap(initialBooks[0])]);
   const [selectedBookId, setSelectedBookId] = useState(initialBooks[0].id);
   const [selectedParagraph, setSelectedParagraph] = useState(0);
@@ -55,17 +137,19 @@ function App() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     getResources()
       .then((resources) => {
-        if (!resources.length) return;
-        setBooks((current) => {
-          const resourceIds = new Set(resources.map((book) => book.id));
-          const sampleBooks = current.filter((book) => !resourceIds.has(book.id) && initialBooks.some((sample) => sample.id === book.id));
-          return [...resources, ...sampleBooks];
-        });
+        if (cancelled) return;
+        setBooks(mergeBooks(resources, localResources, initialBooks));
       })
-      .catch(() => {});
-  }, [setBooks]);
+      .catch(() => {
+        if (!cancelled) setBooks(mergeBooks(localResources, initialBooks));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [localResources]);
 
   async function generateStructure() {
     setLoading("正在用 AI 预生成结构图...");
@@ -134,8 +218,16 @@ function App() {
     const form = new FormData(formElement);
     setLoading("正在导入资源...");
     try {
-      const book = await uploadResource(form);
-      setBooks((current) => [book, ...current]);
+      let book;
+      try {
+        book = await uploadResource(form);
+      } catch (error) {
+        if (!canCreateLocalResource(form)) throw error;
+        console.warn("[resource-local-fallback]", error);
+        book = createLocalResource(form);
+        setLocalResources((current) => mergeBooks([book], current));
+      }
+      setBooks((current) => mergeBooks([book], current));
       setSelectedBookId(book.id);
       formElement.reset();
     } finally {
@@ -147,9 +239,12 @@ function App() {
     if (!window.confirm(`删除「${book.title}」？这会同时移除它关联的结构图。`)) return;
     setLoading("正在删除资源...");
     try {
-      await deleteResource(book.id).catch((error) => {
-        console.warn("[resource-delete-warning]", error);
-      });
+      if (!isLocalResource(book)) {
+        await deleteResource(book.id).catch((error) => {
+          console.warn("[resource-delete-warning]", error);
+        });
+      }
+      setLocalResources((current) => current.filter((item) => item.id !== book.id));
       setBooks((current) => {
         const remaining = current.filter((item) => item.id !== book.id);
         if (selectedBookId === book.id) {
@@ -174,7 +269,10 @@ function App() {
   async function editResource(book, changes) {
     setLoading("正在保存书籍信息...");
     try {
-      const updated = book.storage ? await updateResource(book.id, changes) : { ...book, ...changes };
+      const updated = isLocalResource(book) ? applyBookChanges(book, changes) : book.storage ? await updateResource(book.id, changes) : { ...book, ...changes };
+      if (isLocalResource(updated)) {
+        setLocalResources((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      }
       setBooks((current) => current.map((item) => (item.id === book.id ? updated : item)));
     } finally {
       setLoading("");
